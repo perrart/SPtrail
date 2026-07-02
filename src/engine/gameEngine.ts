@@ -3,16 +3,18 @@ import type {
   EventChoice,
   GameEvent,
   GameState,
+  Period,
   Resources,
   TurnRecord,
 } from '../types';
 import { PERIODS, RESOURCE_META, TOTAL_TURNS } from '../types';
 import { DISTRICTS } from '../data/districts';
 import { TRANSPORTS } from '../data/transports';
-import { ALL_EVENTS, EVENTS_BY_ID, eventsForDistrict } from '../data/events';
+import { ALL_EVENTS, EVENTS_BY_ID, GENERIC_EVENTS, eventsForDistrict } from '../data/events';
+import { getWorkEvent } from '../data/workEvents';
 import { resolveEnding } from '../data/endings';
 import { clamp } from '../utils/clamp';
-import { chance, pickWeighted, randInt } from '../utils/random';
+import { chance, pickWeighted, randInt, sampleDistinct } from '../utils/random';
 
 const BASE_RESOURCES: Resources = {
   money: 60,
@@ -22,6 +24,9 @@ const BASE_RESOURCES: Resources = {
   reputation: 40,
 };
 
+const DISTRICT_OPTIONS_PER_TURN = 8;
+const RENT_DAY = 4; // meio da semana
+
 function applyModifiers(base: Resources, mods: Partial<Resources>): Resources {
   const result = { ...base };
   (Object.keys(mods) as (keyof Resources)[]).forEach((k) => {
@@ -30,37 +35,87 @@ function applyModifiers(base: Resources, mods: Partial<Resources>): Resources {
   return result;
 }
 
+function clamp2(resources: Resources, delta: Partial<Resources>): Resources {
+  const result = { ...resources };
+  (Object.keys(delta) as (keyof Resources)[]).forEach((k) => {
+    result[k] = clamp(result[k] + (delta[k] ?? 0));
+  });
+  return result;
+}
+
+function isVitalDepleted(resources: Resources): boolean {
+  return (['money', 'energy', 'mental'] as const).some((k) => resources[k] <= 0);
+}
+
+/** Retorna o bairro de trabalho obrigatório do personagem para o período dado, se houver. */
+export function getWorkDistrictForPeriod(character: Character | null, period: Period): string | null {
+  if (!character || !character.workDistrictId || !character.workPeriods) return null;
+  return character.workPeriods.includes(period) ? character.workDistrictId : null;
+}
+
+/** Sorteia as opções de bairro de um turno, sempre incluindo o trabalho obrigatório, se houver. */
+export function drawDistrictOptions(character: Character | null, period: Period): string[] {
+  const allIds = DISTRICTS.map((d) => d.id);
+  const workDistrict = getWorkDistrictForPeriod(character, period);
+  return sampleDistinct(allIds, DISTRICT_OPTIONS_PER_TURN, workDistrict ?? undefined);
+}
+
 export function createInitialState(): GameState {
   return {
     screen: 'home',
     character: null,
+    homeDistrictId: null,
     resources: { ...BASE_RESOURCES },
     day: 1,
     periodIndex: 0,
     turnStep: 'district',
+    currentOptions: [],
     currentDistrictId: null,
     currentTransportId: null,
     currentEvent: null,
+    isWorkTurn: false,
     turnHistory: [],
     unlockedEventIds: [],
+    rentCharged: false,
     gameOverEarly: false,
     endingId: null,
     lastTurn: null,
+    notices: [],
   };
 }
 
-export function startGame(character: Character): GameState {
-  const state = createInitialState();
-  state.character = character;
-  state.resources = applyModifiers(BASE_RESOURCES, character.modifiers);
-  state.screen = 'main';
-  return state;
+/** Etapa 1: jogador escolhe o personagem. Ainda falta escolher onde vai morar. */
+export function chooseCharacter(state: GameState, character: Character): GameState {
+  return {
+    ...state,
+    character,
+    resources: applyModifiers(BASE_RESOURCES, character.modifiers),
+    screen: 'residence',
+  };
+}
+
+/** Etapa 2: jogador escolhe o bairro onde vai morar. A partir daqui o jogo começa de fato. */
+export function chooseResidence(state: GameState, districtId: string): GameState {
+  if (!state.character) return state;
+  return {
+    ...state,
+    homeDistrictId: districtId,
+    day: 1,
+    periodIndex: 0,
+    turnStep: 'district',
+    currentOptions: drawDistrictOptions(state.character, PERIODS[0]),
+    screen: 'main',
+    notices: [],
+  };
 }
 
 export function selectDistrict(state: GameState, districtId: string): GameState {
+  const period = PERIODS[state.periodIndex];
+  const workDistrict = getWorkDistrictForPeriod(state.character, period);
   return {
     ...state,
     currentDistrictId: districtId,
+    isWorkTurn: workDistrict !== null && workDistrict === districtId,
     turnStep: 'transport',
   };
 }
@@ -70,21 +125,35 @@ export function selectTransport(state: GameState, transportId: string): GameStat
   const transport = TRANSPORTS.find((t) => t.id === transportId);
   if (!transport) return state;
 
-  const pool = [
-    ...eventsForDistrict(state.currentDistrictId),
-    ...state.unlockedEventIds
-      .map((id) => EVENTS_BY_ID[id])
-      .filter((e): e is GameEvent => !!e && e.districtId === state.currentDistrictId),
-  ];
+  let chosenEvent: GameEvent | null = null;
 
-  const compatiblePool = pool.filter(
-    (e) => e.compatibleTransports === 'any' || e.compatibleTransports.includes(transportId)
-  );
-  const finalPool = compatiblePool.length > 0 ? compatiblePool : pool;
+  if (state.isWorkTurn && state.character) {
+    chosenEvent = getWorkEvent(state.character.id);
+  }
 
-  const chosenEvent =
-    pickWeighted(finalPool, (e) => e.weight) ??
-    pickWeighted(ALL_EVENTS.filter((e) => e.districtId === state.currentDistrictId), (e) => e.weight);
+  if (!chosenEvent) {
+    const pool = [
+      ...eventsForDistrict(state.currentDistrictId),
+      ...GENERIC_EVENTS.filter(
+        (e) => e.compatibleTransports === 'any' || e.compatibleTransports.includes(transportId)
+      ),
+      ...state.unlockedEventIds
+        .map((id) => EVENTS_BY_ID[id])
+        .filter((e): e is GameEvent => !!e && e.districtId === state.currentDistrictId),
+    ];
+
+    const compatiblePool = pool.filter(
+      (e) => e.compatibleTransports === 'any' || e.compatibleTransports.includes(transportId)
+    );
+    const finalPool = compatiblePool.length > 0 ? compatiblePool : pool;
+
+    chosenEvent =
+      pickWeighted(finalPool, (e) => e.weight) ??
+      pickWeighted(ALL_EVENTS.filter((e) => e.districtId === state.currentDistrictId), (e) => e.weight) ??
+      pickWeighted(GENERIC_EVENTS, (e) => e.weight);
+  }
+
+  if (!chosenEvent) return state;
 
   // Custo-base de transporte é aplicado junto com o resultado do evento,
   // para que o jogador sinta o impacto da escolha de deslocamento.
@@ -100,14 +169,6 @@ export function selectTransport(state: GameState, transportId: string): GameStat
     resources: resourcesAfterTransport,
     turnStep: 'event',
   };
-}
-
-function clamp2(resources: Resources, delta: Partial<Resources>): Resources {
-  const result = { ...resources };
-  (Object.keys(delta) as (keyof Resources)[]).forEach((k) => {
-    result[k] = clamp(result[k] + (delta[k] ?? 0));
-  });
-  return result;
 }
 
 interface ResolvedChoice {
@@ -165,11 +226,10 @@ export function makeChoice(state: GameState, choiceId: string): GameState {
     choiceLabel: choice.label,
     resultText,
     delta,
+    isWork: state.isWorkTurn,
   };
 
-  const gameOverEarly = (['money', 'energy', 'mental'] as const).some(
-    (k) => newResources[k] <= 0
-  );
+  const gameOverEarly = isVitalDepleted(newResources);
 
   const unlockedEventIds =
     unlockedEventId && !state.unlockedEventIds.includes(unlockedEventId)
@@ -197,26 +257,73 @@ export function continueAfterResult(state: GameState): GameState {
     return { ...state, screen: 'end', endingId: computeEndingId(state) };
   }
 
+  // ---- Penalidade de falta ao trabalho -----------------------------------
+  const notices: string[] = [];
+  let resources = state.resources;
+  const finishedPeriod = PERIODS[state.periodIndex];
+  const workDistrict = getWorkDistrictForPeriod(state.character, finishedPeriod);
+  if (workDistrict && state.currentDistrictId !== workDistrict && state.character?.absencePenalty) {
+    resources = clamp2(resources, state.character.absencePenalty);
+    notices.push(
+      `Você faltou ao seu compromisso de ${finishedPeriod.toLowerCase()} e isso pesou nos seus recursos.`
+    );
+  }
+
+  if (isVitalDepleted(resources)) {
+    return {
+      ...state,
+      resources,
+      gameOverEarly: true,
+      screen: 'end',
+      endingId: computeEndingId({ ...state, resources, gameOverEarly: true }),
+    };
+  }
+
   let nextPeriodIndex = state.periodIndex + 1;
   let nextDay = state.day;
-  let nextResources = state.resources;
   if (nextPeriodIndex >= PERIODS.length) {
     nextPeriodIndex = 0;
     nextDay += 1;
     // Uma noite de sono recupera um pouco de energia e saúde mental —
     // a cidade é dura, mas ninguém aguenta 7 dias sem nenhum descanso.
-    nextResources = clamp2(state.resources, { energy: 16, mental: 8 });
+    resources = clamp2(resources, { energy: 16, mental: 8 });
+  }
+
+  // ---- Cobrança de aluguel, uma vez, no meio da semana -------------------
+  let rentCharged = state.rentCharged;
+  if (!rentCharged && nextDay >= RENT_DAY && state.homeDistrictId) {
+    const home = getDistrictById(state.homeDistrictId);
+    if (home) {
+      resources = clamp2(resources, { money: -home.rent });
+      notices.push(`Aluguel do(a) ${home.name} descontado: -R$ ${home.rent}.`);
+      rentCharged = true;
+    }
+  }
+
+  if (isVitalDepleted(resources)) {
+    return {
+      ...state,
+      resources,
+      rentCharged,
+      gameOverEarly: true,
+      screen: 'end',
+      endingId: computeEndingId({ ...state, resources, gameOverEarly: true }),
+    };
   }
 
   return {
     ...state,
-    resources: nextResources,
+    resources,
     day: nextDay,
     periodIndex: nextPeriodIndex,
     turnStep: 'district',
+    currentOptions: drawDistrictOptions(state.character, PERIODS[nextPeriodIndex]),
     currentDistrictId: null,
     currentTransportId: null,
     currentEvent: null,
+    isWorkTurn: false,
+    rentCharged,
+    notices,
     screen: 'main',
   };
 }

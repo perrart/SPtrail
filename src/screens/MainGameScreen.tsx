@@ -3,9 +3,11 @@ import { TRANSPORTS } from '../data/transports';
 import type { GameState } from '../types';
 import { PERIODS } from '../types';
 import { Card } from '../components/Card';
+import { FallbackImage } from '../components/FallbackImage';
 import { MetroTracker } from '../components/MetroTracker';
 import { ResourcesPanel } from '../components/ResourcesPanel';
-import { getDistrictById, getTransportById } from '../engine/gameEngine';
+import { getDistrictById, getTransportById, getWorkDistrictForPeriod } from '../engine/gameEngine';
+import { districtImagePath } from '../utils/images';
 import './MainGameScreen.css';
 
 interface MainGameScreenProps {
@@ -24,6 +26,13 @@ export function MainGameScreen({
   const currentDistrict = state.currentDistrictId ? getDistrictById(state.currentDistrictId) : null;
   const currentTransport = state.currentTransportId ? getTransportById(state.currentTransportId) : null;
   const recentHistory = [...state.turnHistory].slice(-3).reverse();
+  const period = PERIODS[state.periodIndex];
+  const homeDistrict = state.homeDistrictId ? getDistrictById(state.homeDistrictId) : null;
+  const workDistrictId = getWorkDistrictForPeriod(state.character, period);
+
+  const optionDistricts = state.currentOptions
+    .map((id) => DISTRICTS.find((d) => d.id === id))
+    .filter((d): d is (typeof DISTRICTS)[number] => !!d);
 
   return (
     <div className="main-game">
@@ -35,7 +44,7 @@ export function MainGameScreen({
 
       <div className="main-game__headline">
         <span className="eyebrow">
-          DIA {state.day} DE 7 · {PERIODS[state.periodIndex].toUpperCase()}
+          DIA {state.day} DE 7 · {period.toUpperCase()}
         </span>
         {state.character && (
           <span className="main-game__char">
@@ -44,17 +53,45 @@ export function MainGameScreen({
         )}
       </div>
 
+      {homeDistrict && (
+        <div className="main-game__home">
+          🏠 Mora em {homeDistrict.name} · aluguel R$ {homeDistrict.rent}/semana
+        </div>
+      )}
+
       <ResourcesPanel resources={state.resources} compact />
+
+      {state.notices.length > 0 && (
+        <div className="main-game__notices">
+          {state.notices.map((notice, i) => (
+            <div key={i} className="main-game__notice">
+              ⚠️ {notice}
+            </div>
+          ))}
+        </div>
+      )}
 
       {state.turnStep === 'district' && (
         <section className="main-game__section">
-          <h2 className="main-game__section-title">Para onde você vai agora?</h2>
+          <h2 className="main-game__section-title">
+            {workDistrictId ? 'Para onde você vai agora? (seu trabalho está entre as opções)' : 'Para onde você vai agora?'}
+          </h2>
           <div className="main-game__grid">
-            {DISTRICTS.map((district) => (
-              <Card key={district.id} onClick={() => onSelectDistrict(district.id)} className="district-card">
+            {optionDistricts.map((district) => (
+              <Card
+                key={district.id}
+                onClick={() => onSelectDistrict(district.id)}
+                className={`district-card ${district.id === workDistrictId ? 'district-card--work' : ''}`}
+              >
+                <FallbackImage
+                  src={districtImagePath(district, period)}
+                  alt={district.name}
+                  fallbackEmoji={district.emoji}
+                  className="district-card__img"
+                />
                 <div className="district-card__head">
-                  <span className="district-card__emoji">{district.emoji}</span>
                   <span className="district-card__name">{district.name}</span>
+                  {district.id === workDistrictId && <span className="district-card__badge">TRABALHO</span>}
                 </div>
                 <p className="district-card__desc">{district.description}</p>
                 <div className="district-card__meta">
@@ -92,6 +129,7 @@ export function MainGameScreen({
         <section className="main-game__section">
           <div className="event-context eyebrow">
             {currentDistrict.emoji} {currentDistrict.name} · {currentTransport.emoji} {currentTransport.name}
+            {state.isWorkTurn && ' · 💼 TURNO DE TRABALHO'}
           </div>
           <Card className="event-card">
             <h2 className="event-card__title">{state.currentEvent.title}</h2>

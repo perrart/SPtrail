@@ -35,6 +35,7 @@ export function TurnResultScreen({ state, onContinue }: TurnResultScreenProps) {
     <div className="turn-result">
       <div className="eyebrow">
         DIA {turn.day} · {turn.period.toUpperCase()} · {district?.emoji} {district?.name}
+        {turn.isWork && ' · 💼 TRABALHO'}
       </div>
 
       <Card className="turn-result__card">

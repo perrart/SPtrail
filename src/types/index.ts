@@ -6,22 +6,51 @@ export type ResourceKey = 'money' | 'energy' | 'mental' | 'contacts' | 'reputati
 
 export type Resources = Record<ResourceKey, number>;
 
+export type Zone = 'Centro' | 'Norte' | 'Sul' | 'Leste' | 'Oeste';
+
+// Prefixo usado nos arquivos de imagem dos bairros: Z{prefixo}_{imageKey}_{DIA|NOITE}.png
+export const ZONE_IMAGE_PREFIX: Record<Zone, string> = {
+  Centro: 'ZC',
+  Norte: 'ZN',
+  Sul: 'ZS',
+  Leste: 'ZL',
+  Oeste: 'ZO',
+};
+
 export interface Character {
   id: string;
   name: string;
   emoji: string;
+  /** Corresponde ao arquivo PERSONA_{imageKey}.png */
+  imageKey: string;
   tagline: string;
   description: string;
   modifiers: Partial<Resources>;
+  /** Bairro fixo de trabalho/estudo (id de District). Undefined = trabalho flexível, sem local fixo. */
+  workDistrictId?: string;
+  /** Períodos em que esse personagem precisa estar no workDistrictId. */
+  workPeriods?: Period[];
+  /** Dinheiro ganho por período trabalhado. */
+  salaryPerShift?: number;
+  /** Custo de energia/saúde mental de um turno de trabalho. */
+  workEnergyCost?: number;
+  workMentalCost?: number;
+  /** Penalidade aplicada se o personagem faltar a um período de trabalho obrigatório. */
+  absencePenalty?: Partial<Resources>;
 }
 
 export interface District {
   id: string;
   name: string;
+  zone: Zone;
+  /** Corresponde ao token nos arquivos Z{prefixo}_{imageKey}_DIA|NOITE.png */
+  imageKey: string;
   emoji: string;
   description: string;
   difficulty: 1 | 2 | 3 | 4 | 5;
   avgCost: number;
+  /** Aluguel semanal cobrado no meio da semana caso o jogador more aqui. */
+  rent: number;
   economicProfile: string;
   opportunities: string[];
   vibe: string;
@@ -76,6 +105,7 @@ export interface TurnRecord {
   choiceLabel: string;
   resultText: string;
   delta: Partial<Resources>;
+  isWork?: boolean;
 }
 
 export interface Ending {
@@ -95,25 +125,39 @@ export interface EndingContext {
   character: Character;
 }
 
-export type ScreenId = 'home' | 'character' | 'howToPlay' | 'main' | 'turnResult' | 'end';
+export type ScreenId =
+  | 'home'
+  | 'character'
+  | 'residence'
+  | 'howToPlay'
+  | 'main'
+  | 'turnResult'
+  | 'end';
 
 export type TurnStep = 'district' | 'transport' | 'event';
 
 export interface GameState {
   screen: ScreenId;
   character: Character | null;
+  homeDistrictId: string | null;
   resources: Resources;
   day: number; // 1..7
   periodIndex: number; // 0,1,2
   turnStep: TurnStep;
+  /** As 8 opções de bairro sorteadas para o turno atual (mais o trabalho fixo, se houver). */
+  currentOptions: string[];
   currentDistrictId: string | null;
   currentTransportId: string | null;
   currentEvent: GameEvent | null;
+  isWorkTurn: boolean;
   turnHistory: TurnRecord[];
   unlockedEventIds: string[];
+  rentCharged: boolean;
   gameOverEarly: boolean;
   endingId: string | null;
   lastTurn: TurnRecord | null;
+  /** Avisos do sistema (aluguel cobrado, falta ao trabalho, etc.) mostrados no topo do turno seguinte. */
+  notices: string[];
 }
 
 export const RESOURCE_META: Record<

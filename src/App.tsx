@@ -2,6 +2,7 @@ import { useGame } from './hooks/useGame';
 import { HomeScreen } from './screens/HomeScreen';
 import { HowToPlayScreen } from './screens/HowToPlayScreen';
 import { CharacterSelectScreen } from './screens/CharacterSelectScreen';
+import { ResidenceSelectScreen } from './screens/ResidenceSelectScreen';
 import { MainGameScreen } from './screens/MainGameScreen';
 import { TurnResultScreen } from './screens/TurnResultScreen';
 import { EndScreen } from './screens/EndScreen';
@@ -12,7 +13,8 @@ export default function App() {
     goToCharacterSelect,
     goToHowToPlay,
     goHome,
-    beginGame,
+    selectCharacter,
+    confirmResidence,
     chooseDistrict,
     chooseTransport,
     chooseEventOption,
@@ -28,7 +30,9 @@ export default function App() {
 
       {state.screen === 'howToPlay' && <HowToPlayScreen onBack={goHome} />}
 
-      {state.screen === 'character' && <CharacterSelectScreen onSelect={beginGame} />}
+      {state.screen === 'character' && <CharacterSelectScreen onSelect={selectCharacter} />}
+
+      {state.screen === 'residence' && <ResidenceSelectScreen onSelect={confirmResidence} />}
 
       {state.screen === 'main' && (
         <MainGameScreen

@@ -1,12 +1,13 @@
 import { useCallback, useState } from 'react';
 import type { Character, GameState } from '../types';
 import {
+  chooseCharacter,
+  chooseResidence,
   continueAfterResult,
   createInitialState,
   makeChoice,
   selectDistrict,
   selectTransport,
-  startGame,
 } from '../engine/gameEngine';
 
 export function useGame() {
@@ -24,8 +25,12 @@ export function useGame() {
     []
   );
 
-  const beginGame = useCallback((character: Character) => {
-    setState(startGame(character));
+  const selectCharacter = useCallback((character: Character) => {
+    setState((s) => chooseCharacter(s, character));
+  }, []);
+
+  const confirmResidence = useCallback((districtId: string) => {
+    setState((s) => chooseResidence(s, districtId));
   }, []);
 
   const chooseDistrict = useCallback((districtId: string) => {
@@ -51,7 +56,8 @@ export function useGame() {
     goHome,
     goToCharacterSelect,
     goToHowToPlay,
-    beginGame,
+    selectCharacter,
+    confirmResidence,
     chooseDistrict,
     chooseTransport,
     chooseEventOption,

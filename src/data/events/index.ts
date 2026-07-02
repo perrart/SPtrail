@@ -1,26 +1,40 @@
-import { CENTRO_EVENTS } from './centro';
+import { SE_EVENTS } from './se';
 import { LIBERDADE_EVENTS } from './liberdade';
-import { BRAS_EVENTS } from './bras';
 import { PINHEIROS_EVENTS } from './pinheiros';
-import { FARIA_LIMA_EVENTS } from './farialima';
 import { ITAQUERA_EVENTS } from './itaquera';
 import { MOOCA_EVENTS } from './mooca';
+import { ZONA_CENTRO_EVENTS } from './zonaCentro';
+import { ZONA_NORTE_EVENTS } from './zonaNorte';
+import { ZONA_SUL_EVENTS } from './zonaSul';
+import { ZONA_LESTE_EVENTS } from './zonaLeste';
+import { ZONA_OESTE_EVENTS } from './zonaOeste';
+import { GENERIC_EVENTS } from './generic';
 import type { GameEvent } from '../../types';
 
-export const ALL_EVENTS: GameEvent[] = [
-  ...CENTRO_EVENTS,
+// Eventos exclusivos de um bairro específico.
+export const DISTRICT_EVENTS: GameEvent[] = [
+  ...SE_EVENTS,
   ...LIBERDADE_EVENTS,
-  ...BRAS_EVENTS,
   ...PINHEIROS_EVENTS,
-  ...FARIA_LIMA_EVENTS,
   ...ITAQUERA_EVENTS,
   ...MOOCA_EVENTS,
+  ...ZONA_CENTRO_EVENTS,
+  ...ZONA_NORTE_EVENTS,
+  ...ZONA_SUL_EVENTS,
+  ...ZONA_LESTE_EVENTS,
+  ...ZONA_OESTE_EVENTS,
 ];
+
+// Eventos que podem sortear em qualquer bairro (districtId 'generic').
+export { GENERIC_EVENTS };
+
+export const ALL_EVENTS: GameEvent[] = [...DISTRICT_EVENTS, ...GENERIC_EVENTS];
 
 export const EVENTS_BY_ID: Record<string, GameEvent> = Object.fromEntries(
   ALL_EVENTS.map((e) => [e.id, e])
 );
 
+/** Eventos exclusivos de um bairro (não inclui os genéricos). */
 export function eventsForDistrict(districtId: string): GameEvent[] {
-  return ALL_EVENTS.filter((e) => e.districtId === districtId && !e.isBonus);
+  return DISTRICT_EVENTS.filter((e) => e.districtId === districtId && !e.isBonus);
 }

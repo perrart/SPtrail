@@ -20,21 +20,6 @@ npm run build
 npm run preview
 ```
 
-## Publicando no GitHub Pages (automático via GitHub Actions)
-
-O projeto já vem com um workflow em `.github/workflows/deploy.yml` que builda e publica o jogo automaticamente a cada push na branch `main`.
-
-Para ativar (só precisa fazer uma vez, pelo navegador):
-
-1. Suba o projeto para um repositório no GitHub (branch `main`).
-2. No repositório, vá em **Settings → Pages**.
-3. Em **Build and deployment → Source**, selecione **GitHub Actions** (não "Deploy from a branch").
-4. Pronto. A cada push em `main`, a aba **Actions** do repositório vai mostrar o workflow "Deploy to GitHub Pages" rodando. Quando terminar (ícone verde ✓), o link do site aparece em **Settings → Pages** e também no resumo do workflow.
-
-Se preferir disparar manualmente sem dar push, vá em **Actions → Deploy to GitHub Pages → Run workflow**.
-
-O `vite.config.ts` já usa `base: './'` (caminhos relativos), então o build funciona tanto localmente quanto publicado em `https://<usuario>.github.io/<repo>/`, sem precisar editar nada quando o nome do repositório mudar.
-
 ## Como jogar
 
 A cada turno você:
@@ -72,19 +57,6 @@ O motor de jogo (`engine/gameEngine.ts`) é completamente separado da interface:
 - **Novo recurso:** estenda o tipo `ResourceKey` e `RESOURCE_META` em `src/types/index.ts`.
 
 Nenhuma dessas expansões exige alterar o loop principal do motor de jogo.
-
-## Publicando no GitHub Pages (automático via GitHub Actions)
-
-Este projeto já vem com um workflow em `.github/workflows/deploy.yml` que builda e publica o jogo automaticamente a cada push na branch `main`.
-
-Depois de subir o repositório para o GitHub:
-
-1. No repositório, vá em **Settings** → **Pages** (menu lateral esquerdo).
-2. Em **Build and deployment → Source**, selecione **GitHub Actions**.
-3. Vá na aba **Actions** do repositório e confirme que o workflow **"Deploy to GitHub Pages"** rodou com sucesso (ele dispara sozinho a cada push em `main`; se quiser rodar manualmente, use o botão **Run workflow**).
-4. Quando terminar, o link do site aparece em **Settings → Pages** (formato `https://<seu-usuario>.github.io/<nome-do-repositorio>/`).
-
-O `vite.config.ts` já está configurado com `base: './'` (caminhos relativos), então o build funciona corretamente nesse subcaminho sem precisar editar nada.
 
 ## Sobre o visual
 

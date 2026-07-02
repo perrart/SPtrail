@@ -1,0 +1,39 @@
+.end-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 12px;
+}
+
+.end-screen__ending-emoji {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.end-screen__title {
+  font-size: 42px;
+}
+
+.end-screen__desc {
+  color: var(--ink-secondary);
+  font-size: 15px;
+  max-width: 56ch;
+}
+
+.end-screen__stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.end-screen__stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--ink-secondary);
+}
+
+.end-screen__stat-row strong {
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+}

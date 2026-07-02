@@ -1,0 +1,48 @@
+.bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bar__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+}
+
+.bar__label {
+  color: var(--ink-secondary);
+}
+
+.bar__value {
+  font-family: var(--font-mono);
+  color: var(--ink-primary);
+  font-weight: 600;
+}
+
+.bar__track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-panel-raised);
+  overflow: hidden;
+  border: 1px solid var(--line-hairline);
+}
+
+.bar--compact .bar__track {
+  height: 6px;
+}
+
+.bar__fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bar__fill--default {
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-lilac));
+}
+
+.bar__fill--danger {
+  background: var(--accent-red);
+}

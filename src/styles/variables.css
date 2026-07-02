@@ -1,0 +1,30 @@
+:root {
+  /* Paleta — concreto, sinalização de metrô, luz de sódio noturna */
+  --bg-void: #121114;
+  --bg-panel: #1c1b1f;
+  --bg-panel-raised: #262429;
+  --bg-panel-hover: #2f2d33;
+  --ink-primary: #f2ede4;
+  --ink-secondary: #c9c2b8;
+  --ink-muted: #8b8580;
+
+  --accent-blue: #0057b8;   /* Linha 1 - Azul */
+  --accent-yellow: #ffc72c; /* Linha 4 - Amarela */
+  --accent-green: #3fa66a;  /* saúde / positivo */
+  --accent-red: #e8542e;    /* alerta / perigo */
+  --accent-lilac: #9a6fb0;  /* Linha 5 - Lilás, usado com moderação */
+
+  --line-hairline: rgba(242, 237, 228, 0.1);
+  --line-hairline-strong: rgba(242, 237, 228, 0.22);
+
+  --font-display: 'Bebas Neue', 'Archivo Black', sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+
+  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 14px 40px rgba(0, 0, 0, 0.45);
+}

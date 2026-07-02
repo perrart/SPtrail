@@ -1,0 +1,72 @@
+.turn-result {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 8px;
+}
+
+.turn-result__card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.turn-result__title {
+  font-size: 26px;
+}
+
+.turn-result__choice {
+  color: var(--ink-secondary);
+  font-size: 14px;
+}
+
+.turn-result__choice strong {
+  color: var(--ink-primary);
+}
+
+.turn-result__text {
+  color: var(--ink-secondary);
+  font-size: 15px;
+}
+
+.delta-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.delta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.delta-row__value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.delta-row--pos .delta-row__value {
+  color: var(--accent-green);
+}
+
+.delta-row--neg .delta-row__value {
+  color: var(--accent-red);
+}
+
+.turn-result__transport-note {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.turn-result__warning {
+  background: rgba(232, 84, 46, 0.12);
+  border: 1px solid var(--accent-red);
+  color: var(--ink-primary);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}

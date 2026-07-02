@@ -1,0 +1,42 @@
+.home {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 22px;
+  min-height: 70vh;
+}
+
+.home__badge {
+  color: var(--accent-yellow);
+}
+
+.home__title {
+  font-size: clamp(48px, 12vw, 80px);
+  line-height: 0.92;
+  color: var(--ink-primary);
+}
+
+.home__title-accent {
+  color: var(--accent-blue);
+  display: block;
+}
+
+.home__subtitle {
+  color: var(--ink-secondary);
+  max-width: 46ch;
+  font-size: 16px;
+}
+
+.home__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 320px;
+  margin-top: 12px;
+}
+
+.home__footer {
+  margin-top: 30px;
+  color: var(--ink-muted);
+}
